@@ -1,0 +1,256 @@
+definitions:
+  handlers.AddSongFailedExternalAPIResponse:
+    properties:
+      id:
+        type: integer
+      songDetails:
+        type: string
+    type: object
+  handlers.BasicSongInfoJSON:
+    properties:
+      group:
+        type: string
+      song:
+        type: string
+    type: object
+  handlers.FilteredListResponse:
+    properties:
+      filteredRows: {}
+    type: object
+  handlers.UpdateRequestJSON:
+    properties:
+      id:
+        type: integer
+      link:
+        type: string
+      releaseDate:
+        type: string
+      text:
+        type: string
+    type: object
+  models.ErrorResponse:
+    properties:
+      errors: {}
+    type: object
+  models.IdResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  models.VersesResponse:
+    properties:
+      verses: {}
+    type: object
+info:
+  contact: {}
+paths:
+  /music-library/list:
+    get:
+      consumes:
+      - text/plain
+      description: page and pageSize are required, every other field is a filter,
+        if it's empty, it is treated as absence of filter
+      parameters:
+      - description: group name
+        in: query
+        name: group
+        type: string
+      - description: song name
+        in: query
+        name: song
+        type: string
+      - description: dates before this will not show up
+        in: query
+        name: releaseDateLower
+        type: string
+      - description: dates after this will not show up
+        in: query
+        name: releaseDateUpper
+        type: string
+      - description: lyrics
+        in: query
+        name: text
+        type: string
+      - description: page number
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: number of songs displayed per page
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.FilteredListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Fetches song data in pages
+      tags:
+      - music-library
+  /music-library/lyrics:
+    get:
+      consumes:
+      - text/plain
+      description: If page/pageSize combination results in an empty page, you will
+        get status code 400 :)
+      parameters:
+      - description: song id
+        in: query
+        name: id
+        required: true
+        type: integer
+      - description: page number
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: number of verses per page
+        in: query
+        name: pageSize
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.VersesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Fetches lyrics divided into verses
+      tags:
+      - music-library
+  /music-library/song:
+    delete:
+      consumes:
+      - text/plain
+      description: Returns provided id if deletion succeeded
+      parameters:
+      - description: song id
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IdResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Deletes song from library
+      tags:
+      - music-library
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Makes a request into externalAPIURL, if it fails, returns status 201,
+        saves basic song info and writes encountered errors into response body (field "songDetails")
+      parameters:
+      - description: group and song names
+        in: body
+        name: BasicSongInfoJSON
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.BasicSongInfoJSON'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IdResponse'
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.AddSongFailedExternalAPIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Adds song into library
+      tags:
+      - music-library
+    put:
+      consumes:
+      - application/json
+      description: You need to provide id and 3 other fields, on success returns provided
+        id
+      parameters:
+      - description: id and additional info
+        in: body
+        name: UpdateRequestJSON
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateRequestJSON'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.IdResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "422":
+          description: Unprocessable Entity
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Updates song info
+      tags:
+      - music-library
+swagger: "2.0"
